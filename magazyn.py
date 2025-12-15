@@ -1,72 +1,79 @@
 import streamlit as st
 
-# --- Inicjalizacja Magazynu (Lista przechowująca nazwy towarów) ---
-# Używamy st.session_state do utrzymania stanu (listy) pomiędzy interakcjami.
+# --- Inicjalizacja Magazynu ---
+# Używamy st.session_state, aby zachować stan listy towarów
+# po ponownym uruchomieniu aplikacji przez Streamlit.
 if 'magazyn' not in st.session_state:
-    st.session_state.magazyn = ["Kawa", "Herbata", "Czekolada"]
+    st.session_state.magazyn = ["Kawa", "Herbata", "Cukier"]
 
-# --- Funkcje Logiki Magazynu ---
+# --- Funkcje Magazynu ---
 
 def dodaj_towar(nazwa):
     """Dodaje towar do listy magazynu."""
     if nazwa and nazwa not in st.session_state.magazyn:
         st.session_state.magazyn.append(nazwa)
-        st.success(f"Dodano: **{nazwa}**")
+        st.success(f"Dodano towar: **{nazwa}**")
     elif nazwa in st.session_state.magazyn:
-        st.warning(f"Towar **{nazwa}** jest już w magazynie.")
+        st.warning(f"Towar **{nazwa}** już istnieje w magazynie.")
     else:
         st.error("Nazwa towaru nie może być pusta.")
 
 def usun_towar(nazwa):
     """Usuwa towar z listy magazynu."""
-    try:
+    if nazwa in st.session_state.magazyn:
         st.session_state.magazyn.remove(nazwa)
-        st.success(f"Usunięto: **{nazwa}**")
-    except ValueError:
-        st.warning(f"Nie znaleziono towaru o nazwie: **{nazwa}**")
+        st.success(f"Usunięto towar: **{nazwa}**")
+    else:
+        st.error(f"Nie znaleziono towaru: **{nazwa}** w magazynie.")
 
 # --- Interfejs Użytkownika Streamlit ---
 
-st.title("📦 Prosty Magazyn (Streamlit + Lista)")
-st.caption("Dane są przechowywane tylko w sesji, bez zapisu do pliku.")
+st.title("📦 Prosty Magazyn Towarów")
 
-## Sekcja 1: Wyświetlanie Stanu Magazynu
-st.header("Aktualny Stan Magazynu")
+# Kolumny dla głównej zawartości i "ciastka"
+col1, col2 = st.columns([3, 1])
 
-if st.session_state.magazyn:
-    # Wyświetlenie listy jako numerowanej listy Markdown
-    magazyn_str = "\n".join([f"* {item}" for item in st.session_state.magazyn])
-    st.markdown(magazyn_str)
-else:
-    st.info("Magazyn jest pusty.")
+with col1:
+    st.header("Zarządzanie Stanem")
 
-st.markdown("---")
-
-## Sekcja 2: Dodawanie Towaru
-st.header("➕ Dodaj Towar")
-# Używamy formy Streamlit, aby przycisk wywoływał funkcję po kliknięciu
-with st.form("dodaj_form"):
-    nowy_towar = st.text_input("Nazwa nowego towaru:", key="input_dodaj")
-    # Formularz wymaga przycisku submit
-    dodaj_przycisk = st.form_submit_button("Dodaj do Magazynu")
-    
-    if dodaj_przycisk:
+    # --- Dodawanie Towaru ---
+    st.subheader("➕ Dodaj Nowy Towar")
+    nowy_towar = st.text_input("Wprowadź nazwę towaru do dodania:", key="input_dodaj")
+    if st.button("Dodaj", use_container_width=True):
         dodaj_towar(nowy_towar)
+        # Czyszczenie pola tekstowego po dodaniu
+        st.session_state.input_dodaj = ""
 
 
-## Sekcja 3: Usuwanie Towaru
-st.header("➖ Usuń Towar")
-
-if st.session_state.magazyn:
-    # Użycie st.selectbox pozwala na łatwy wybór spośród istniejących towarów
-    towar_do_usuniecia = st.selectbox(
-        "Wybierz towar do usunięcia:",
-        st.session_state.magazyn,
-        key="select_usun"
-    )
+    # --- Usuwanie Towaru ---
+    st.subheader("➖ Usuń Towar")
     
-    # Przycisk, który wywoła funkcję usuwania
-    if st.button("Usuń Wybrany Towar"):
-        usun_towar(towar_do_usuniecia)
-else:
-    st.info("Brak towarów do usunięcia.")
+    if st.session_state.magazyn:
+        towar_do_usuniecia = st.selectbox(
+            "Wybierz towar do usunięcia:",
+            options=st.session_state.magazyn,
+            key="select_usun"
+        )
+        if st.button("Usuń Wybrany Towar", use_container_width=True):
+            usun_towar(towar_do_usuniecia)
+            # Wymuszenie odświeżenia, aby zaktualizować selectbox
+            st.rerun() 
+    else:
+        st.info("Magazyn jest pusty. Nie ma czego usuwać.")
+
+
+    # --- Aktualny Stan Magazynu ---
+    st.subheader("Aktualny Stan Magazynu")
+    if st.session_state.magazyn:
+        st.dataframe({
+            'Lp.': range(1, len(st.session_state.magazyn) + 1),
+            'Nazwa Towaru': st.session_state.magazyn
+        }, hide_index=True, use_container_width=True)
+    else:
+        st.info("Magazyn jest obecnie pusty.")
+
+with col2:
+    st.header("Boczny Akcent")
+    st.markdown("---")
+    st.write("🍪 **Ciastko Dnia!**")
+    st.markdown("---")
