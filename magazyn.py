@@ -1,10 +1,3 @@
-Aby połączyć Streamlit z bazą danych Supabase, najpierw musisz zainstalować bibliotekę klienta: pip install st-supabase-connection lub pip install supabase.
-
-Poniżej znajduje się przekształcony kod, który zamiast st.session_state używa tabeli w Supabase (zakładamy, że tabela nazywa się produkty i ma kolumnę nazwa).
-
-Krok 1: Kod aplikacji
-Python
-
 import streamlit as st
 from st_supabase_connection import SupabaseConnection
 
